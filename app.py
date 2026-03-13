@@ -1,41 +1,45 @@
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
+# ተማሪዎች የሚሞሉት ፎርም (ከምስሉ ላይ የቀጠለ)
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
 <head>
     <title>Wollo Registration System</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; padding: 50px; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); display: inline-block; }
-        input { padding: 10px; margin: 10px; border: 1px solid #ccc; width: 80%; }
-        button { padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input { padding: 10px; margin: 10px 0; width: 100%; border: 1px solid #ccc; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>እንኳን ወደ ወሎ ዩኒቨርሲቲ ምዝገባ ሲስተም በሰላም መጡ</h2>
+        <h2>የተማሪዎች ምዝገባ</h2>
         <form method="POST">
-            <input type="text" name="username" placeholder="ሙሉ ስምዎን ያስገቡ" required>
-            <br>
-            <button type="submit">ይመዝገቡ</button>
+            <input type="text" name="name" placeholder="ሙሉ ስም" required>
+            <input type="text" name="id" placeholder="የተማሪ መታወቂያ (ID)" required>
+            <button type="submit">መዝግብ</button>
         </form>
-        {% if name %}
-            <p style="color: green; font-weight: bold;">ተማሪ {{ name }} በስኬት ተመዝግቧል!</p>
-        {% endif %}
     </div>
 </body>
 </html>
 '''
 
 @app.route('/', methods=['GET', 'POST'])
-def home():
-    name = None
+def index():
     if request.method == 'POST':
-        name = request.form.get('username')
-    return render_template_string(HTML_TEMPLATE, name=name)
+        # ተማሪው የላከውን ዳታ እዚህ ጋር እንቀበላለን
+        student_name = request.form.get('name')
+        student_id = request.form.get('id')
+        
+        # ለጊዜው ስክሪኑ ላይ እናሳየው (በኋላ ወደ Database መቀየር እንችላለን)
+        return f"ተማሪ {student_name} (ID: {student_id}) በትክክል ተመዝግቧል!"
+    
+    return HTML_TEMPLATE
 
 if __name__ == '__main__':
     app.run(debug=True)
+
