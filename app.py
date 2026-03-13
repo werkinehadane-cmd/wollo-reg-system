@@ -2,7 +2,7 @@ from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
 
-# የዌብሳይቱ ገጽታ (HTML)
+# የዌብሳይቱ ገጽታ (HTML/CSS)
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html lang="am">
@@ -46,7 +46,7 @@ def index():
         name = request.form.get('name')
         student_id = request.form.get('id')
         
-        # እዚህ ጋር ለወደፊቱ ዳታቤዝ ውስጥ ማስገባት ይቻላል
+        # ለጊዜው መረጃውን በሰርቨሩ 'Log' ላይ ያሳየዋል
         print(f"New Registration: {name}, ID: {student_id}")
         
     return render_template_string(HTML_TEMPLATE, name=name)
