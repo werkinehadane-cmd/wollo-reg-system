@@ -43,3 +43,17 @@ def index():
 if __name__ == '__main__':
     app.run(debug=True)
 
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        # ተማሪው የላከውን ስም እና ID እዚህ እንቀበላለን
+        name = request.form.get('name')
+        student_id = request.form.get('id')
+        
+        # ዳታው መድረሱን ለማረጋገጥ መልስ እንስጠው
+        return f"<h2>ተማሪ {name} በID {student_id} በትክክል ተመዝግቧል!</h2><a href='/'>ተመለስ</a>"
+    
+    return HTML_TEMPLATE
+
+if __name__ == '__main__':
+    app.run(debug=True)
