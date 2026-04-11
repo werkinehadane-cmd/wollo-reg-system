@@ -106,6 +106,22 @@ def login():
                     <p><b>የተቆለፈ ታሪክህ:</b></p>
                     <p style="white-space: pre-wrap;">{user[8]}</p>
                 </div>
+                        '''
+        content += f'''
+        <hr>
+        <h4>መረጃህን እዚህ አድስ</h4>
+        <form action="/update" method="POST">
+            <input type="hidden" name="student_id" value="{user[2]}">
+            <textarea name="biography" style="width:100%; height:100px;">{user[5]}</textarea><br>
+            <button type="submit" style="background:green; color:white; padding:10px;">መረጃውን አድስ</button>
+        </form>
+
+        <hr>
+        <form action="/delete/{user[2]}" method="POST" onsubmit="return confirm('በእርግጥ ይጥፋ?')">
+            <button type="submit" style="background:red; color:white; padding:5px;">መለያዬን አጥፋ</button>
+        </form>
+        '''
+
                 <br><a href="/login"><button style="background-color: #6c757d;">ውጣ (Logout)</button></a>
             '''
         else:
