@@ -1,3 +1,4 @@
+
 import sqlite3
 import os
 from flask import Flask, render_template_string, request
@@ -8,18 +9,13 @@ app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'student_personal_data.db')
 
-def init_db():
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS students 
-                     (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, student_id TEXT UNIQUE, 
-                      access_code TEXT, step1 TEXT, step2 TEXT, step3 TEXT, 
-                      step4 TEXT, step5 TEXT, step6 TEXT, step7 TEXT)''')
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"Database Init Error: {e}")
+def get_db_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute('''CREATE TABLE IF NOT EXISTS students 
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, student_id TEXT UNIQUE, 
+                  access_code TEXT, step1 TEXT, step2 TEXT, step3 TEXT, 
+                  step4 TEXT, step5 TEXT, step6 TEXT, step7 TEXT)''')
+    return conn
 
 HTML_LAYOUT = '''
 <!DOCTYPE html>
@@ -42,43 +38,38 @@ HTML_LAYOUT = '''
 
 @app.route('/')
 def home():
-    content = '<h2>ወሎ ዩኒቨርሲቲ</h2><a href="/register"><button class="blue">አዲስ ምዝገባ</button></a><a href="/login"><button class="green">መረጃ ለማስቀመጥ ግባ</button></a>'
+    content = '<h2>@work.com</h2><a href="/register"><button class="blue">አዲስ ምዝገባ</button></a><a href="/login"><button class="green">ፕሮፋይል ለማስገባት ግባ</button></a>'
     return render_template_string(HTML_LAYOUT.replace('{{content}}', content))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form.get('name')
-        s_id = request.form.get('student_id')
-        code = request.form.get('access_code')
+        name, s_id, code = request.form.get('name'), request.form.get('student_id'), request.form.get('access_code')
         try:
-            conn = sqlite3.connect(DB_PATH)
-            c = conn.cursor()
-            c.execute("INSERT INTO students (name, student_id, access_code, step1, step2, step3, step4, step5, step6, step7) VALUES (?, ?, ?, '', '', '', '', '', '', '')", (name, s_id, code))
+            conn = get_db_connection()
+            conn.execute("INSERT INTO students (name, student_id, access_code, step1, step2, step3, step4, step5, step6, step7) VALUES (?, ?, ?, '', '', '', '', '', '', '')", (name, s_id, code))
             conn.commit()
             conn.close()
-            return 'ምዝገባ ተሳክቷል! <a href="/login">አሁን ግባ</a>'
+            return 'ምዝገባ ተሳክቷል! <a href="/login">አሁን ፕሮፋይል አስገባ</a>'
         except sqlite3.IntegrityError:
             return 'ስህተት፡ ይህ ID ተመዝግቧል። <a href="/register">ተመለስ</a>'
         except Exception as e:
             return f"Error: {str(e)}"
-    return render_template_string(HTML_LAYOUT.replace('{{content}}', '<h2>አዲስ ምዝገባ</h2><form method="POST"><input name="name" placeholder="ሙሉ ስም" required><input name="student_id" placeholder="ID" required><input name="access_code" placeholder="Code" required><button class="blue">ተመዝገብ</button></form><a href="/">ተመለስ</a>'))
+    return render_template_string(HTML_LAYOUT.replace('{{content}}', '<h2>አዲስ ምዝገባ</h2><form method="POST"><input name="name" placeholder="ሙሉ ስም" required><input name="student_id" placeholder="ID" required><input name="access_code" placeholder="Password/Code" required><button class="blue">ተመዝገብ</button></form><a href="/">ተመለስ</a>'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        s_id = request.form.get('student_id')
-        code = request.form.get('access_code')
+        s_id, code = request.form.get('student_id'), request.form.get('access_code')
         try:
-            conn = sqlite3.connect(DB_PATH)
-            c = conn.cursor()
-            c.execute("SELECT * FROM students WHERE student_id = ? AND access_code = ?", (s_id, code))
-            user = c.fetchone()
+            conn = get_db_connection()
+            user = conn.execute("SELECT * FROM students WHERE student_id = ? AND access_code = ?", (s_id, code)).fetchone()
             conn.close()
             if user:
-                steps_html = f'<h2>ሰላም {user[1]}</h2><form action="/save/{user[2]}" method="POST">'
+                steps_html = f'<h2>ሰላም {user[1]}</h2><p>ፕሮፋይልህን እዚህ አስገባ</p><form action="/save/{user[2]}" method="POST">'
+                labels = ["የግል መረጃ", "ትምህርት ደረጃ", "ልምድ", "ክህሎት", "ፍላጎት", "አድራሻ", "ተጨማሪ"]
                 for i in range(1, 8):
-                    steps_html += f'<textarea name="step{i}" placeholder="ማህደር {i}">{user[i+3]}</textarea>'
+                    steps_html += f'<textarea name="step{i}" placeholder="{labels[i-1]}">{user[i+3]}</textarea>'
                 steps_html += '<button type="submit" class="green">ሁሉንም አስቀምጥ</button></form>'
                 return render_template_string(HTML_LAYOUT.replace('{{content}}', steps_html))
             return 'የተሳሳተ መረጃ! <a href="/login">እንደገና ሞክር</a>'
@@ -89,9 +80,8 @@ def login():
 @app.route('/save/<s_id>', methods=['POST'])
 def save(s_id):
     try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute("UPDATE students SET step1=?, step2=?, step3=?, step4=?, step5=?, step6=?, step7=? WHERE student_id=?", 
+        conn = get_db_connection()
+        conn.execute("UPDATE students SET step1=?, step2=?, step3=?, step4=?, step5=?, step6=?, step7=? WHERE student_id=?", 
                   (request.form.get('step1'), request.form.get('step2'), request.form.get('step3'), request.form.get('step4'), request.form.get('step5'), request.form.get('step6'), request.form.get('step7'), s_id))
         conn.commit()
         conn.close()
@@ -100,7 +90,6 @@ def save(s_id):
         return f"Save Error: {str(e)}"
 
 if __name__ == '__main__':
-    init_db()
     app.run()
 
 
