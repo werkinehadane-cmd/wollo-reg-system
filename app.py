@@ -16,7 +16,7 @@ def init_db():
                   religion TEXT, access_code TEXT, biography TEXT)''')
     conn.commit()
     conn.close()
-
+init_db()
 # የዌብሳይቱ ገጽታ (HTML/CSS)
 HTML_LAYOUT = '''
 <!DOCTYPE html>
