@@ -88,46 +88,57 @@ def login():
     content = ""
     if request.method == 'POST':
         s_id = request.form.get('student_id')
-        code = request.form.get('access_code')
-        
-        conn = sqlite3.connect('wollo_v2.db')
+           access_code = request.form.get('access_code')
 
-        c = conn.cursor()
-        c.execute("SELECT * FROM students WHERE student_id=? AND access_code=?", (s_id, code))
-        user = c.fetchone()
-        conn.close()
-        
-        if user:
-            content = f'''
-                <h2>የ{user[1]} የግል ማስታወሻ</h2>
-                <div style="background: #f9f9f9; padding: 15px; border-left: 5px solid #1a73e8;">
-                    <p><b>መታወቂያ:</b> {user[2]}</p>
-                    <p><b>እድሜ:</b> {user[3]}</p>
-                    <p><b>የተቆለፈ ታሪክህ:</b></p>
-                    <p style="white-space: pre-wrap;">{user[8]}</p>
-                </div>
-        <hr>
-        <h4>መረጃህን እዚህ አድስ</h4>
-        <form action="/update" method="POST">
-            <input type="hidden" name="student_id" value="{user[2]}">
-            <textarea name="biography" style="width:100%; height:100px;">{user[5]}</textarea><br>
-            <button type="submit" style="background:green; color:white; padding:10px;">መረጃውን አድስ</button>
-        </form>
+    conn = sqlite3.connect('wollo_v2.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM students WHERE student_id = ? AND access_code = ?", (student_id, access_code))
+    user = c.fetchone()
+    conn.close()
 
-        <hr>
-        <form action="/delete/{user[2]}" method="POST" onsubmit="return confirm('በእርግጥ ይጥፋ?')">
-            <button type="submit" style="background:red; color:white; padding:5px;">መለያዬን አጥፋ</button>
-        </form>
+    if user:
+        content = f'''
+        <div style="padding: 20px; border: 1px solid #ccc; border-radius: 10px; background: #f9f9f9;">
+            <h2>የ{user[1]} የግል ማስታወሻ</h2>
+            <p><b>መታወቂያ:</b> {user[2]}</p>
+            <p><b>እድሜ:</b> {user[3]}</p>
+            <p><b>የተቀላቀልክበት ቀን:</b> {user[7]}</p>
+            <hr>
+            <h4>መረጃህን እዚህ አድስ</h4>
+            <form action="/update" method="POST">
+                <input type="hidden" name="student_id" value="{user[2]}">
+                <textarea name="biography" style="width:100%; height:100px;">{user[5]}</textarea><br><br>
+                <button type="submit" style="background:green; color:white; padding:10px;">መረጃውን አድስ</button>
+            </form>
+            <hr>
+            <form action="/delete/{user[2]}" method="POST" onsubmit="return confirm('በእርግጥ ይጥፋ?')">
+                <button type="submit" style="background:red; color:white; padding:5px;">መለያዬን አጥፋ</button>
+            </form>
+            <br><a href="/login"><button style="background:#6c757d; color:white;">ውጣ (Logout)</button></a>
+        </div>
         '''
-
-                <br><a href="/login"><button style="background-color: #6c757d;">ውጣ (Logout)</button></a>
-            '''
-        else:
-            content = '<p style="color:red; text-align:center;">ስህተት! መታወቂያ ወይም ኮድ አልተዛመደም።</p>' + login_form()
     else:
-        content = login_form()
+        content = '<p style="color:red; text-align:center;">ስህተት! መታወቂያ ወይም ኮድ አልተዛመደም።</p>'
+        content += '<br><center><a href="/login">እንደገና ሞክር</a></center>'
+
+    return render_template_string(HTML_LAYOUT.replace('{{content}}', content))
+
+def login_form():
+    return '''
+    <h2>የግል ገጽህን ክፈት</h2>
+    <form method="POST">
+        <input type="text" name="student_id" placeholder="መታወቂያ (ID)" required><br><br>
+        <input type="password" name="access_code" placeholder="ሚስጥራዊ ኮድ" required><br><br>
+        <button type="submit">ግባ (Login)</button>
+    </form>
+    '''
+
+if __name__ == '__main__':
+    init_db()
+    app.run(debug=True)
+ code = request.form.get('access_code')
         
-    return render_template_string(HTML_LAYOUT, content=content)
+    
 
 def login_form():
     return '''
