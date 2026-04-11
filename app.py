@@ -106,8 +106,6 @@ def login():
                     <p><b>የተቆለፈ ታሪክህ:</b></p>
                     <p style="white-space: pre-wrap;">{user[8]}</p>
                 </div>
-                        '''
-        content += f'''
         <hr>
         <h4>መረጃህን እዚህ አድስ</h4>
         <form action="/update" method="POST">
