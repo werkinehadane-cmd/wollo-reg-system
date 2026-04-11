@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # ዳታቤዝ ዝግጅት (ሁሉንም መረጃ እንዲይዝ)
 def init_db():
-    conn = sqlite3.connect('wollo_university.db')
+    conn = wollo_v2.db 
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS students
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
