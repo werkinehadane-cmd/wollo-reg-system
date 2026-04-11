@@ -124,6 +124,27 @@ def login_form():
             <button type="submit">ቆልፉን ክፈት</button>
         </form>
     '''
+# መረጃን ለማደስ (Update)
+@app.route('/update', methods=['POST'])
+def update():
+    s_id = request.form.get('student_id')
+    new_bio = request.form.get('biography')
+    conn = sqlite3.connect('wollo_v2.db')
+    c = conn.cursor()
+    c.execute("UPDATE students SET biography = ? WHERE student_id = ?", (new_bio, s_id))
+    conn.commit()
+    conn.close()
+    return "<h3>መረጃው በትክክል ታድሷል!</h3><a href='/login'>ወደ ኋላ ተመለስ</a>"
+
+# መረጃን ለማጥፋት (Delete)
+@app.route('/delete/<s_id>', methods=['POST'])
+def delete(s_id):
+    conn = sqlite3.connect('wollo_v2.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM students WHERE student_id = ?", (s_id,))
+    conn.commit()
+    conn.close()
+    return "<h3>መረጃው ሙሉ በሙሉ ተሰርዟል!</h3><a href='/'>ወደ መነሻ ተመለስ</a>"
 
 if __name__ == '__main__':
     init_db()
