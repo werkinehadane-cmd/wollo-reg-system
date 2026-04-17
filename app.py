@@ -6,6 +6,7 @@ from pymongo import MongoClient
 
 app = Flask(__name__)
 
+# MongoDB Connection
 MONGO_URI = os.environ.get('MONGO_URI')
 client = MongoClient(MONGO_URI)
 db = client['work_dot_com_db']
@@ -22,10 +23,10 @@ HTML_LAYOUT = '''
         .box { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; position: relative; }
         .step { display: none; }
         .active { display: block; }
-        h2 { color: #333; margin-bottom: 25px; font-size: 28px; }
+        h2 { color: #333; margin-bottom: 10px; font-size: 28px; }
         input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #eee; border-radius: 12px; background: #f9f9f9; box-sizing: border-box; font-size: 16px; }
         .file-label { display: block; background: #34495e; color: white; padding: 12px; border-radius: 10px; cursor: pointer; margin: 10px 0; font-size: 14px; }
-        .profile-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #1a73e8; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .profile-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #1a73e8; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .main-btn { background: #1a73e8; color: white; width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 15px; }
         .info-header { text-align: left; font-weight: bold; margin-bottom: 10px; color: #1a73e8; font-size: 18px; }
         .note-style { width: 100%; min-height: 200px; border: 1px solid #eee; border-radius: 15px; padding: 10px; background: #fffbe6; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
@@ -33,7 +34,9 @@ HTML_LAYOUT = '''
         .btn-container { display: flex; justify-content: space-between; gap: 10px; margin-top: 15px; }
         .nav-btn { background: #f1f3f4; color: #3c4043; flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
         .save-btn { background: #27ae60; color: white; flex: 2; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .admin-stat { position: absolute; bottom: 10px; right: 20px; font-size: 10px; color: #eee; text-decoration: none; }
+        
+        /* ቁጥሩ በግልጽ እንዲታይ የተስተካከለ */
+        .admin-link { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #1a73e8; text-decoration: none; font-weight: bold; background: #e8f0fe; padding: 5px 10px; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -56,12 +59,19 @@ HTML_LAYOUT = '''
 @app.route('/')
 def home():
     count = students_col.count_documents({})
+    # መጨረሻ የተመዘገበውን ሰው ፎቶ "ውጭ ላይ" ለማሳየት
+    last_user = students_col.find_one(sort=[('_id', -1)])
+    img_html = ""
+    if last_user and last_user.get("photo"):
+        img_html = f'<img src="{last_user["photo"]}" class="profile-img" style="display: block; margin: 0 auto 15px;">'
+    
     content = f'''
+    {img_html}
     <h2>@work.com</h2>
-    <p style="color:#666;">የግል መረጃ መደበቂያ</p>
+    <p style="color:#666; margin-bottom: 20px;">የግል መረጃ መደበቂያ</p>
     <a href="/register" style="text-decoration:none;"><button class="main-btn">አዲስ ምዝገባ</button></a>
     <a href="/login" style="display:block; margin-top:20px; color:#1a73e8; text-decoration:none; font-weight:bold;">መረጃ ለማስገባት ግባ</a>
-    <a href="/admin_login" class="admin-stat">U: {count}</a>
+    <a href="/admin_login" class="admin-link">ተጠቃሚዎች: {count}</a>
     '''
     return render_template_string(HTML_LAYOUT.replace('{{content}}', content))
 
@@ -72,7 +82,6 @@ def register():
         photo = request.files.get('profile_photo')
         photo_data = ""
         if photo:
-            # ፍጥነቱን ለመጨመር ፎቶውን እዚህ ጋር እናቀልለዋለን
             photo_data = "data:image/jpeg;base64," + base64.b64encode(photo.read()).decode('utf-8')
 
         if students_col.find_one({"student_id": s_id}):
@@ -91,7 +100,7 @@ def login():
         user = students_col.find_one({"student_id": s_id, "access_code": code})
         if user:
             img = f'<img src="{user.get("photo", "")}" class="profile-img">' if user.get("photo") else ""
-            titles = ["የህይወት ታሪክ", "የዕለት ተዕለት እቅድ መያዣ", "በህይወት ስንኖር ያጋጠሙን ገጠመኞች", "የተማርናቸው ኮርሶች፣ የመምህሩ ስም እና ውጤት", "የገቢና ወጭ መያዣ", "የሀገርና ሃይማኖታዊ ታሪክ መመዝገቢያ", "የንግድ / ገንዘብ ነክ ስራ ማስታወሻ"]
+            titles = ["የገቢና ወጭ መመዝገቢያ", "የህይወት ታሪክ", "በህይወት ስንኖር ገጠመኝ", "የተማርናቸው ኮርስና የመምህሩ ስም እና GPA", "የጓደኛ ሚስጢር መመዝገቢያ", "የሀገርና ሃይማኖታዊ ታሪክ መመዝገቢያ", "የንግድ / ገንዘብ ነክ ስራ ማስታወሻ"]
             steps_html = f'{img}<h3 style="margin-top:5px;">ሰላም {user["name"]}</h3><form action="/save/{user["student_id"]}" method="POST">'
             for i in range(1, 8):
                 active = "active" if i == 1 else ""
@@ -107,10 +116,10 @@ def admin():
     if request.method == 'POST':
         if request.form.get('pass') == "Admin123":
             users = list(students_col.find({}, {"name": 1, "student_id": 1}))
-            user_list = "".join([f"<li>{u['name']} ({u['student_id']})</li>" for u in users])
-            return f'<div style="padding:20px; font-family:sans-serif;"><h2>ተጠቃሚዎች ({len(users)})</h2><ul>{user_list}</ul><a href="/">ተመለስ</a></div>'
+            user_list = "".join([f"<li style='margin-bottom:10px;'><b>{u['name']}</b> (ID: {u['student_id']})</li>" for u in users])
+            return f'<div style="padding:20px; font-family:sans-serif;"><h2>ተጠቃሚዎች ({len(users)})</h2><ul>{user_list}</ul><a href="/" style="color:#1a73e8; font-weight:bold;">ተመለስ</a></div>'
         return 'ኮድ ተሳስተሃል!'
-    return render_template_string(HTML_LAYOUT.replace('{{content}}', '<h2>Admin Access</h2><form method="POST"><input name="pass" type="password" placeholder="ኮድ"><button class="main-btn">ግባ</button></form>'))
+    return render_template_string(HTML_LAYOUT.replace('{{content}}', '<h2>Admin Access</h2><form method="POST"><input name="pass" type="password" placeholder="Admin Code"><button class="main-btn">ግባ</button></form>'))
 
 @app.route('/save/<s_id>', methods=['POST'])
 def save(s_id):
