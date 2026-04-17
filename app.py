@@ -6,7 +6,6 @@ from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# MongoDB Connection
 MONGO_URI = os.environ.get('MONGO_URI')
 client = MongoClient(MONGO_URI)
 db = client['work_dot_com_db']
@@ -20,13 +19,13 @@ HTML_LAYOUT = '''
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .box { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .box { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; position: relative; }
         .step { display: none; }
         .active { display: block; }
         h2 { color: #333; margin-bottom: 25px; font-size: 28px; }
         input { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #eee; border-radius: 12px; background: #f9f9f9; box-sizing: border-box; font-size: 16px; }
         .file-label { display: block; background: #34495e; color: white; padding: 12px; border-radius: 10px; cursor: pointer; margin: 10px 0; font-size: 14px; }
-        .profile-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #1a73e8; margin-bottom: 10px; }
+        .profile-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #1a73e8; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .main-btn { background: #1a73e8; color: white; width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 15px; }
         .info-header { text-align: left; font-weight: bold; margin-bottom: 10px; color: #1a73e8; font-size: 18px; }
         .note-style { width: 100%; min-height: 200px; border: 1px solid #eee; border-radius: 15px; padding: 10px; background: #fffbe6; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
@@ -34,6 +33,7 @@ HTML_LAYOUT = '''
         .btn-container { display: flex; justify-content: space-between; gap: 10px; margin-top: 15px; }
         .nav-btn { background: #f1f3f4; color: #3c4043; flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
         .save-btn { background: #27ae60; color: white; flex: 2; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .admin-stat { position: absolute; bottom: 10px; right: 20px; font-size: 10px; color: #eee; text-decoration: none; }
     </style>
 </head>
 <body>
@@ -55,46 +55,33 @@ HTML_LAYOUT = '''
 
 @app.route('/')
 def home():
-    content = '<h2>@work.com</h2><p style="color:#666;">የግል መረጃ መደበቂያ</p><a href="/register" style="text-decoration:none;"><button class="main-btn">አዲስ ምዝገባ</button></a><a href="/login" style="display:block; margin-top:20px; color:#1a73e8; text-decoration:none; font-weight:bold;">መረጃ ለማስገባት ግባ</a><br><small><a href="/admin_login" style="color:#ccc; text-decoration:none;">.</a></small>'
+    count = students_col.count_documents({})
+    content = f'''
+    <h2>@work.com</h2>
+    <p style="color:#666;">የግል መረጃ መደበቂያ</p>
+    <a href="/register" style="text-decoration:none;"><button class="main-btn">አዲስ ምዝገባ</button></a>
+    <a href="/login" style="display:block; margin-top:20px; color:#1a73e8; text-decoration:none; font-weight:bold;">መረጃ ለማስገባት ግባ</a>
+    <a href="/admin_login" class="admin-stat">U: {count}</a>
+    '''
     return render_template_string(HTML_LAYOUT.replace('{{content}}', content))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form.get('name')
-        s_id = request.form.get('student_id')
-        code = request.form.get('access_code')
-        
-        # ፕሮፋይል ፎቶን ወደ ጽሁፍ መቀየር
+        name, s_id, code = request.form.get('name'), request.form.get('student_id'), request.form.get('access_code')
         photo = request.files.get('profile_photo')
         photo_data = ""
         if photo:
+            # ፍጥነቱን ለመጨመር ፎቶውን እዚህ ጋር እናቀልለዋለን
             photo_data = "data:image/jpeg;base64," + base64.b64encode(photo.read()).decode('utf-8')
 
         if students_col.find_one({"student_id": s_id}):
             return 'IDው ተይዟል! <a href="/register">ተመለስ</a>'
             
-        students_col.insert_one({
-            "name": name, 
-            "student_id": s_id, 
-            "access_code": code, 
-            "photo": photo_data,
-            "step1":"", "step2":"", "step3":"", "step4":"", "step5":"", "step6":"", "step7":""
-        })
+        students_col.insert_one({"name": name, "student_id": s_id, "access_code": code, "photo": photo_data, "step1":"", "step2":"", "step3":"", "step4":"", "step5":"", "step6":"", "step7":""})
         return redirect(url_for('login'))
         
-    content = '''
-    <h2>አዲስ ምዝገባ</h2>
-    <form method="POST" enctype="multipart/form-data">
-        <input name="name" placeholder="ሙሉ ስም" required>
-        <input name="student_id" placeholder="ID" required>
-        <input name="access_code" type="password" placeholder="ሚስጥር ኮድ" required>
-        <label class="file-label">የፕሮፋይል ፎቶ ምረጥ
-            <input type="file" name="profile_photo" accept="image/*" style="display:none;">
-        </label>
-        <button class="main-btn">ተመዝገብ</button>
-    </form>
-    '''
+    content = '''<h2>አዲስ ምዝገባ</h2><form method="POST" enctype="multipart/form-data"><input name="name" placeholder="ሙሉ ስም" required><input name="student_id" placeholder="ID" required><input name="access_code" type="password" placeholder="ሚስጥር ኮድ" required><label class="file-label">የፕሮፋይል ፎቶ ምረጥ<input type="file" name="profile_photo" accept="image/*" style="display:none;"></label><button class="main-btn">ተመዝገብ</button></form>'''
     return render_template_string(HTML_LAYOUT.replace('{{content}}', content))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -103,9 +90,9 @@ def login():
         s_id, code = request.form.get('student_id'), request.form.get('access_code')
         user = students_col.find_one({"student_id": s_id, "access_code": code})
         if user:
-            img_tag = f'<img src="{user.get("photo", "")}" class="profile-img">' if user.get("photo") else ""
+            img = f'<img src="{user.get("photo", "")}" class="profile-img">' if user.get("photo") else ""
             titles = ["የህይወት ታሪክ", "የዕለት ተዕለት እቅድ መያዣ", "በህይወት ስንኖር ያጋጠሙን ገጠመኞች", "የተማርናቸው ኮርሶች፣ የመምህሩ ስም እና ውጤት", "የገቢና ወጭ መያዣ", "የሀገርና ሃይማኖታዊ ታሪክ መመዝገቢያ", "የንግድ / ገንዘብ ነክ ስራ ማስታወሻ"]
-            steps_html = f'{img_tag}<h3 style="margin-top:5px;">ሰላም {user["name"]}</h3><form action="/save/{user["student_id"]}" method="POST">'
+            steps_html = f'{img}<h3 style="margin-top:5px;">ሰላም {user["name"]}</h3><form action="/save/{user["student_id"]}" method="POST">'
             for i in range(1, 8):
                 active = "active" if i == 1 else ""
                 val = user.get(f"step{i}", "")
@@ -115,22 +102,21 @@ def login():
         return 'ID ወይም ኮድ ተሳስተሃል! <a href="/login">ድጋሚ ሞክር</a>'
     return render_template_string(HTML_LAYOUT.replace('{{content}}', '<h2>መግቢያ</h2><form method="POST"><input name="student_id" placeholder="ID" required><input name="access_code" type="password" placeholder="ኮድ" required><button class="main-btn">ግባ</button></form>'))
 
-# --- ሚስጥራዊ የአድሚን ገጽ ---
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
-        pass_code = request.form.get('pass')
-        if pass_code == "Admin123": # ይህ ያንተ ሚስጥር ኮድ ነው
-            count = students_col.count_documents({})
-            return f'<div style="text-align:center; padding:50px; font-family:sans-serif;"><h1>የተጠቃሚዎች ብዛት</h1><p style="font-size:50px; color:#1a73e8;">{count}</p><a href="/">ተመለስ</a></div>'
+        if request.form.get('pass') == "Admin123":
+            users = list(students_col.find({}, {"name": 1, "student_id": 1}))
+            user_list = "".join([f"<li>{u['name']} ({u['student_id']})</li>" for u in users])
+            return f'<div style="padding:20px; font-family:sans-serif;"><h2>ተጠቃሚዎች ({len(users)})</h2><ul>{user_list}</ul><a href="/">ተመለስ</a></div>'
         return 'ኮድ ተሳስተሃል!'
-    return render_template_string(HTML_LAYOUT.replace('{{content}}', '<h2>Admin Login</h2><form method="POST"><input name="pass" type="password" placeholder="ሚስጥር ኮድ"><button class="main-btn">አሳይ</button></form>'))
+    return render_template_string(HTML_LAYOUT.replace('{{content}}', '<h2>Admin Access</h2><form method="POST"><input name="pass" type="password" placeholder="ኮድ"><button class="main-btn">ግባ</button></form>'))
 
 @app.route('/save/<s_id>', methods=['POST'])
 def save(s_id):
     update_data = {f"step{i}": request.form.get(f"step{i}") for i in range(1, 8)}
     students_col.update_one({"student_id": s_id}, {"$set": update_data})
-    return 'መረጃው በሚስጥር ተቀምጧል! <a href="/">ተመለስ</a>'
+    return 'መረጃው ተቀምጧል! <a href="/">ተመለስ</a>'
 
 if __name__ == '__main__':
     app.run()
