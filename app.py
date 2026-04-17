@@ -6,11 +6,10 @@ from pymongo import MongoClient
 app = Flask(__name__)
 
 # --- MONGO_URI እዚህ ጋር በትክክል ማስገባትህን አረጋግጥ ---
-MONGO_URI = "የአንተ_የሞንጎ_ዲቢ_ሊንክ_እዚህ_ይግባ" 
+MONGO_URI = os.environ.get('MONGO_URI')
 client = MongoClient(MONGO_URI)
 db = client['work_dot_com_db']
 students_col = db['students']
-
 HTML_LAYOUT = '''
 <!DOCTYPE html>
 <html>
