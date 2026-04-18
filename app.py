@@ -35,7 +35,6 @@ HTML_LAYOUT = '''
         .nav-btn { background: #f1f3f4; color: #3c4043; flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
         .save-btn { background: #27ae60; color: white; flex: 2; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
         
-        /* ቁጥሩ በግልጽ እንዲታይ የተስተካከለ */
         .admin-link { position: absolute; bottom: 15px; right: 20px; font-size: 14px; color: #1a73e8; text-decoration: none; font-weight: bold; background: #e8f0fe; padding: 5px 10px; border-radius: 10px; }
     </style>
 </head>
@@ -59,11 +58,9 @@ HTML_LAYOUT = '''
 @app.route('/')
 def home():
     count = students_col.count_documents({})
-    # መጨረሻ የተመዘገበውን ሰው ፎቶ "ውጭ ላይ" ለማሳየት
-    last_user = students_col.find_one(sort=[('_id', -1)])
-    img_html = ""
-    if last_user and last_user.get("photo"):
-        img_html = f'<img src="{last_user["photo"]}" class="profile-img" style="display: block; margin: 0 auto 15px;">'
+    # እዚህ ጋር ትክክለኛውን የዩኒቨርሲቲውን የሎጎ ሊንክ አስገባ
+    logo_url = "https://www.wollo.edu.et/path/to/logo.png"
+    img_html = f'<img src="{logo_url}" class="profile-img" style="display: block; margin: 0 auto 15px;">'
     
     content = f'''
     {img_html}
